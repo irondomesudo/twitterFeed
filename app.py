@@ -1,7 +1,7 @@
 import os
 from flask import Flask, request, jsonify
 from models import db, User
-from services import FollowingService
+from services import FollowingService, TweetService
 
 def create_app(database_uri=None):
     flask_app = Flask(__name__)
@@ -60,6 +60,44 @@ def get_followers(user_id):
 def get_following(user_id):
     following = FollowingService.get_following(user_id)
     return jsonify({'following': [{'id': u.id, 'username': u.username} for u in following]}), 200
+
+@app.route('/tweet', methods=['POST'])
+def create_tweet():
+    data = request.get_json()
+    user_id = data.get('user_id')
+    content = data.get('content')
+    
+    if not user_id or not content:
+        return jsonify({'error': 'Missing user_id or content'}), 400
+        
+    try:
+        tweet = TweetService.create_tweet(user_id, content)
+        return jsonify({
+            'message': 'Tweet created successfully',
+            'tweet': {
+                'id': tweet.id,
+                'user_id': tweet.user_id,
+                'content': tweet.content,
+                'created_at': tweet.created_at.isoformat()
+            }
+        }), 201
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
+
+@app.route('/feed/<int:user_id>', methods=['GET'])
+def get_feed(user_id):
+    try:
+        tweets = TweetService.get_feed(user_id)
+        return jsonify({
+            'feed': [{
+                'id': t.id,
+                'user_id': t.user_id,
+                'content': t.content,
+                'created_at': t.created_at.isoformat()
+            } for t in tweets]
+        }), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 400
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -4,6 +4,4 @@ __pycache__/
 *.sqlite3
 twitterfeed.db
 .env
-acr_name.txt
-aci_deploy.json
-ngrok.log
+.git/
